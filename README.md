@@ -101,6 +101,9 @@ Most variables are the same as in the [official postgres image](https://hub.dock
 | WEBHOOK_PRE_BACKUP_URL | URL to be called when backup starts. Default disabled. |
 | WEBHOOK_POST_BACKUP_URL | URL to be called when backup completes successfully. Default disabled. |
 | WEBHOOK_EXTRA_ARGS | Extra arguments for the `curl` execution in the webhook (check `hooks/00-webhook` file for more info). |
+| POST_DUMP_HOOK | Allows actions to be performed on the database dumps, like for instance tar-ing a directory-dump an/or encrypting it.
+    When defined, the hook is called with three parameters: POSTGRES_HOST DB and DFILE (the name of the dumped file/dir).
+    The hook is supposed to return the name of the 'processed' dump.
 
 #### Special Environment Variables
 
@@ -186,3 +189,41 @@ Replace `$BACKUPFILE`, `$VERSION`, `$HOSTNAME`, `$PORT`, `$USERNAME` and `$DBNAM
 ```sh
 docker run --rm --tty --interactive -v $BACKUPFILE:/tmp/backupfile.sql.gz postgres:$VERSION /bin/sh -c "zcat /tmp/backupfile.sql.gz | psql --host=$HOSTNAME --port=$PORT --username=$USERNAME --dbname=$DBNAME -W"
 ```
+
+
+
+#### Use the POST_DUMP_HOOK to tar directory backup
+
+As stated in [Compress directory backups as a single file #33](https://github.com/prodrigestivill/docker-postgres-backup-local/issues/33)
+is is often more convenient to store directory-backups as single files (tars), especially when saving in locations with file-count based billing (S3)
+
+When we extend the example form above with the new `POST_DUMP_HOOK` like this
+
+```- POST_DUMP_HOOK=tar --create --file "${DFILE}.tar" --remove-files "${DFILE}"; DFILE="${DFILE}.tar"```
+
+then each dumped directory (`${DFILE}) will be tar-ed and the tar-ed file will show up in the `daily`, `weekly`, and `monthly` directories
+
+#### Use the POST_DUMP_HOOK to encrypt the backup
+
+My original motivation for this hook is actually the need to encrypt the database backups.
+To achieve that, we mount a script implementing the encryption (and some required resources like an X509 cert)
+in a directory and call it from the hook.
+
+```yaml
+version: '2'
+services:
+     # ....
+    pgbackups:
+      # ....
+      volumes:
+        - ./scripts:/scripts:ro
+      # ....
+      environment:
+        # ....
+        - POSTGRES_EXTRA_OPTS=-Z6 --format=directory
+        - BACKUP_SUFFIX=.crypt.tar
+        - POST_DUMP_HOOK=/scripts/encrypt.sh "$${DFILE}"
+```
+
+The script in `/scripts/encrypt.sh` replaces the directory postgres dumped into with an ecrypted tar'ed file with the
+same name

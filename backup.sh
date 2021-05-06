@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -Eeo pipefail
+set -x
 
 HOOKS_DIR="/hooks"
 if [ -d "${HOOKS_DIR}" ]; then
@@ -37,6 +38,11 @@ for DB in ${POSTGRES_DBS}; do
   else
     echo "Creating dump of ${DB} database from ${POSTGRES_HOST}..."
     pg_dump -d "${DB}" -f "${FILE}" ${POSTGRES_EXTRA_OPTS}
+  fi
+  if [ "${POST_DUMP_HOOK}" != "**None**" ]; then
+    echo "Execute post-dump hook"
+    ls /scripts/
+    eval ${POST_DUMP_HOOK}
   fi
   #Copy (hardlink) for each entry
   if [ -d "${FILE}" ]; then
