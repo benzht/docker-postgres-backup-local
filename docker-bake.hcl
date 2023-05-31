@@ -1,132 +1,107 @@
 group "default" {
-	targets = ["debian-latest", "alpine-latest", "debian-12", "debian-11", "debian-10", "debian-9.6", "debian-9.5", "alpine-12", "alpine-11", "alpine-10", "alpine-9.6", "alpine-9.5"]
+	targets = ["debian-latest", "alpine-latest", "debian-14", "debian-13", "debian-12", "alpine-14", "alpine-13", "alpine-12"]
 }
 
-variable "BUILDREV" {
+variable "REGISTRY_PREFIX" {
 	default = ""
 }
 
-target "common" {
-	platforms = ["linux/amd64", "linux/arm64", "linux/arm/v7", "linux/s390x", "linux/ppc64le"]
-	args = {"GOCRONVER" = "v0.0.10"}
+variable "IMAGE_NAME" {
+	default = "postgres-backup-local"
+}
+
+variable "BUILD_REVISION" {
+	default = ""
 }
 
 target "debian" {
-	inherits = ["common"]
+	args = {"GOCRONVER" = "v0.0.10"}
 	dockerfile = "debian.Dockerfile"
 }
 
 target "alpine" {
-	inherits = ["common"]
+	args = {"GOCRONVER" = "v0.0.10"}
 	dockerfile = "alpine.Dockerfile"
 }
 
 target "debian-latest" {
 	inherits = ["debian"]
-	args = {"BASETAG" = "13"}
+	platforms = ["linux/amd64", "linux/arm64", "linux/arm/v7", "linux/s390x", "linux/ppc64le"]
+	args = {"BASETAG" = "15"}
 	tags = [
-		"prodrigestivill/postgres-backup-local:latest",
-		"prodrigestivill/postgres-backup-local:13",
-		notequal("", BUILDREV) ? "prodrigestivill/postgres-backup-local:13-debian-${BUILDREV}" : ""
+		"${REGISTRY_PREFIX}${IMAGE_NAME}:latest",
+		"${REGISTRY_PREFIX}${IMAGE_NAME}:15",
+		notequal("", BUILD_REVISION) ? "${REGISTRY_PREFIX}${IMAGE_NAME}:15-debian-${BUILD_REVISION}" : ""
 	]
 }
 
 target "alpine-latest" {
 	inherits = ["alpine"]
+	platforms = ["linux/amd64", "linux/arm64", "linux/arm/v7", "linux/s390x", "linux/ppc64le"]
+	args = {"BASETAG" = "15-alpine"}
+	tags = [
+		"${REGISTRY_PREFIX}${IMAGE_NAME}:alpine",
+		"${REGISTRY_PREFIX}${IMAGE_NAME}:15-alpine",
+		notequal("", BUILD_REVISION) ? "${REGISTRY_PREFIX}${IMAGE_NAME}:15-alpine-${BUILD_REVISION}" : ""
+	]
+}
+
+target "debian-14" {
+	inherits = ["debian"]
+	platforms = ["linux/amd64", "linux/arm64", "linux/arm/v7", "linux/s390x", "linux/ppc64le"]
+	args = {"BASETAG" = "14"}
+	tags = [
+		"${REGISTRY_PREFIX}${IMAGE_NAME}:14",
+		notequal("", BUILD_REVISION) ? "${REGISTRY_PREFIX}${IMAGE_NAME}:14-debian-${BUILD_REVISION}" : ""
+	]
+}
+
+target "alpine-14" {
+	inherits = ["alpine"]
+	platforms = ["linux/amd64", "linux/arm64", "linux/arm/v7", "linux/s390x", "linux/ppc64le"]
+	args = {"BASETAG" = "14-alpine"}
+	tags = [
+		"${REGISTRY_PREFIX}${IMAGE_NAME}:14-alpine",
+		notequal("", BUILD_REVISION) ? "${REGISTRY_PREFIX}${IMAGE_NAME}:14-alpine-${BUILD_REVISION}" : ""
+	]
+}
+
+target "debian-13" {
+	inherits = ["debian"]
+	platforms = ["linux/amd64", "linux/arm64", "linux/arm/v7", "linux/s390x", "linux/ppc64le"]
+	args = {"BASETAG" = "13"}
+	tags = [
+		"${REGISTRY_PREFIX}${IMAGE_NAME}:13",
+		notequal("", BUILD_REVISION) ? "${REGISTRY_PREFIX}${IMAGE_NAME}:13-debian-${BUILD_REVISION}" : ""
+	]
+}
+
+target "alpine-13" {
+	inherits = ["alpine"]
+	platforms = ["linux/amd64", "linux/arm64", "linux/arm/v7", "linux/s390x", "linux/ppc64le"]
 	args = {"BASETAG" = "13-alpine"}
 	tags = [
-		"prodrigestivill/postgres-backup-local:alpine",
-		"prodrigestivill/postgres-backup-local:13-alpine",
-		notequal("", BUILDREV) ? "prodrigestivill/postgres-backup-local:13-alpine-${BUILDREV}" : ""
+		"${REGISTRY_PREFIX}${IMAGE_NAME}:13-alpine",
+		notequal("", BUILD_REVISION) ? "${REGISTRY_PREFIX}${IMAGE_NAME}:13-alpine-${BUILD_REVISION}" : ""
 	]
 }
 
 target "debian-12" {
 	inherits = ["debian"]
+	platforms = ["linux/amd64", "linux/arm64", "linux/arm/v7", "linux/s390x", "linux/ppc64le"]
 	args = {"BASETAG" = "12"}
 	tags = [
-		"prodrigestivill/postgres-backup-local:12",
-		notequal("", BUILDREV) ? "prodrigestivill/postgres-backup-local:12-debian-${BUILDREV}" : ""
+		"${REGISTRY_PREFIX}${IMAGE_NAME}:12",
+		notequal("", BUILD_REVISION) ? "${REGISTRY_PREFIX}${IMAGE_NAME}:12-debian-${BUILD_REVISION}" : ""
 	]
 }
 
 target "alpine-12" {
 	inherits = ["alpine"]
+	platforms = ["linux/amd64", "linux/arm64", "linux/arm/v7", "linux/s390x", "linux/ppc64le"]
 	args = {"BASETAG" = "12-alpine"}
 	tags = [
-		"prodrigestivill/postgres-backup-local:12-alpine",
-		notequal("", BUILDREV) ? "prodrigestivill/postgres-backup-local:12-alpine-${BUILDREV}" : ""
-	]
-}
-
-target "debian-11" {
-	inherits = ["debian"]
-	args = {"BASETAG" = "11"}
-	tags = [
-		"prodrigestivill/postgres-backup-local:11",
-		notequal("", BUILDREV) ? "prodrigestivill/postgres-backup-local:11-debian-${BUILDREV}" : ""
-	]
-}
-
-target "alpine-11" {
-	inherits = ["alpine"]
-	args = {"BASETAG" = "11-alpine"}
-	tags = [
-		"prodrigestivill/postgres-backup-local:11-alpine",
-		notequal("", BUILDREV) ? "prodrigestivill/postgres-backup-local:11-alpine-${BUILDREV}" : ""
-	]
-}
-
-target "debian-10" {
-	inherits = ["debian"]
-	args = {"BASETAG" = "10"}
-	tags = [
-		"prodrigestivill/postgres-backup-local:10",
-		notequal("", BUILDREV) ? "prodrigestivill/postgres-backup-local:10-debian-${BUILDREV}" : ""
-	]
-}
-
-target "alpine-10" {
-	inherits = ["alpine"]
-	args = {"BASETAG" = "10-alpine"}
-	tags = [
-		"prodrigestivill/postgres-backup-local:10-alpine",
-		notequal("", BUILDREV) ? "prodrigestivill/postgres-backup-local:10-alpine-${BUILDREV}" : ""
-	]
-}
-
-target "debian-9.6" {
-	inherits = ["debian"]
-	args = {"BASETAG" = "9.6"}
-	tags = [
-		"prodrigestivill/postgres-backup-local:9.6",
-		notequal("", BUILDREV) ? "prodrigestivill/postgres-backup-local:9.6-debian-${BUILDREV}" : ""
-	]
-}
-
-target "alpine-9.6" {
-	inherits = ["alpine"]
-	args = {"BASETAG" = "9.6-alpine"}
-	tags = [
-		"prodrigestivill/postgres-backup-local:9.6-alpine",
-		notequal("", BUILDREV) ? "prodrigestivill/postgres-backup-local:9.6-alpine-${BUILDREV}" : ""
-	]
-}
-
-target "debian-9.5" {
-	inherits = ["debian"]
-	args = {"BASETAG" = "9.5"}
-	tags = [
-		"prodrigestivill/postgres-backup-local:9.5",
-		notequal("", BUILDREV) ? "prodrigestivill/postgres-backup-local:9.5-debian-${BUILDREV}" : ""
-	]
-}
-
-target "alpine-9.5" {
-	inherits = ["alpine"]
-	args = {"BASETAG" = "9.5-alpine"}
-	tags = [
-		"prodrigestivill/postgres-backup-local:9.5-alpine",
-		notequal("", BUILDREV) ? "prodrigestivill/postgres-backup-local:9.5-alpine-${BUILDREV}" : ""
+		"${REGISTRY_PREFIX}${IMAGE_NAME}:12-alpine",
+		notequal("", BUILD_REVISION) ? "${REGISTRY_PREFIX}${IMAGE_NAME}:12-alpine-${BUILD_REVISION}" : ""
 	]
 }

@@ -4,11 +4,24 @@ FROM postgres:$BASETAG
 ARG GOCRONVER=v0.0.10
 ARG TARGETOS
 ARG TARGETARCH
+
+# FIX Debian cross build
+ARG DEBIAN_FRONTEND=noninteractive
 RUN set -x \
-	&& apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && rm -rf /var/lib/apt/lists/* \
-	&& curl -L https://github.com/prodrigestivill/go-cron/releases/download/$GOCRONVER/go-cron-$TARGETOS-$TARGETARCH.gz | zcat > /usr/local/bin/go-cron \
-	&& chmod a+x /usr/local/bin/go-cron \
-	&& apt-get purge -y --auto-remove ca-certificates && apt-get clean
+	&& ln -s /usr/bin/dpkg-split /usr/sbin/dpkg-split \
+	&& ln -s /usr/bin/dpkg-deb /usr/sbin/dpkg-deb \
+	&& ln -s /bin/tar /usr/sbin/tar \
+	&& ln -s /bin/rm /usr/sbin/rm \
+	&& ln -s /usr/bin/dpkg-split /usr/local/sbin/dpkg-split \
+	&& ln -s /usr/bin/dpkg-deb /usr/local/sbin/dpkg-deb \
+	&& ln -s /bin/tar /usr/local/sbin/tar \
+	&& ln -s /bin/rm /usr/local/sbin/rm
+#
+
+RUN set -x \
+	&& apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && apt-get clean && rm -rf /var/lib/apt/lists/* \
+	&& curl --fail --retry 4 --retry-all-errors -o /usr/local/bin/go-cron.gz -L https://github.com/prodrigestivill/go-cron/releases/download/$GOCRONVER/go-cron-$TARGETOS-$TARGETARCH.gz \
+	&& gzip -vnd /usr/local/bin/go-cron.gz && chmod a+x /usr/local/bin/go-cron
 
 ENV POSTGRES_DB="**None**" \
     POSTGRES_DB_FILE="**None**" \
@@ -27,8 +40,12 @@ ENV POSTGRES_DB="**None**" \
     BACKUP_KEEP_DAYS=7 \
     BACKUP_KEEP_WEEKS=4 \
     BACKUP_KEEP_MONTHS=6 \
-    HEALTHCHECK_PORT=8080
+    BACKUP_KEEP_MINS=1440 \
+    HEALTHCHECK_PORT=8080 \
+    WEBHOOK_URL="**None**" \
+    WEBHOOK_EXTRA_ARGS=""
 
+COPY hooks /hooks
 COPY backup.sh /backup.sh
 
 VOLUME /backups
