@@ -6,9 +6,12 @@ on:
       - 'main'
     paths-ignore:
       - '**.md'
+      - '.gitignore'
+      - '.github/workflows/pushrm.yml'
   pull_request:
     paths-ignore:
       - '**.md'
+      - '.github/**'
 
 jobs:
   test-script:
