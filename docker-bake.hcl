@@ -58,7 +58,7 @@ target "debian-16" {
 
 target "alpine-16" {
 	inherits = ["alpine"]
-	platforms = ["linux/amd64", "linux/arm64", "linux/arm/v7", "linux/s390x", "linux/ppc64le"]
+	platforms = ["linux/amd64", "linux/arm64"]
 	args = {"BASETAG" = "16-alpine"}
 	tags = [
 		"${REGISTRY_PREFIX}${IMAGE_NAME}:16-alpine",
