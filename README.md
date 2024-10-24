@@ -49,8 +49,9 @@ services:
             - POSTGRES_USER=username
             - POSTGRES_PASSWORD=password
          #  - POSTGRES_PASSWORD_FILE=/run/secrets/db_password <-- alternative for POSTGRES_PASSWORD (to use with docker secrets)
-            - POSTGRES_EXTRA_OPTS=-Z6 --schema=public --blobs
+            - POSTGRES_EXTRA_OPTS=-Z1 --schema=public --blobs
             - SCHEDULE=@daily
+            - BACKUP_ON_START=TRUE
             - BACKUP_KEEP_DAYS=7
             - BACKUP_KEEP_WEEKS=4
             - BACKUP_KEEP_MONTHS=6
@@ -75,14 +76,16 @@ Most variables are the same as in the [official postgres image](https://hub.dock
 |--|--|
 | BACKUP_DIR | Directory to save the backup at. Defaults to `/backups`. |
 | BACKUP_SUFFIX | Filename suffix to save the backup. Defaults to `.sql.gz`. |
+| BACKUP_ON_START | If set to `TRUE` performs an backup on each container start or restart. Defaults to `FALSE`. |
 | BACKUP_KEEP_DAYS | Number of daily backups to keep before removal. Defaults to `7`. |
 | BACKUP_KEEP_WEEKS | Number of weekly backups to keep before removal. Defaults to `4`. |
 | BACKUP_KEEP_MONTHS | Number of monthly backups to keep before removal. Defaults to `6`. |
 | BACKUP_KEEP_MINS | Number of minutes for `last` folder backups to keep before removal. Defaults to `1440`. |
+| BACKUP_LATEST_TYPE | Type of `latest` pointer (`symlink`,`hardlink`,`none`). Defaults to `symlink`. |
 | HEALTHCHECK_PORT | Port listening for cron-schedule health check. Defaults to `8080`. |
-| POSTGRES_DB | Comma or space separated list of postgres databases to backup. Required. |
+| POSTGRES_DB | Comma or space separated list of postgres databases to backup. If POSTGRES_CLUSTER is set this refers to the database to connect to for dumping global objects and discovering what other databases should be dumped (typically is either `postgres` or `template1`). Required. |
 | POSTGRES_DB_FILE | Alternative to POSTGRES_DB, but with one database per line, for usage with docker secrets. |
-| POSTGRES_EXTRA_OPTS | Additional [options](https://www.postgresql.org/docs/12/app-pgdump.html#PG-DUMP-OPTIONS) for `pg_dump` (or `pg_dumpall` [options](https://www.postgresql.org/docs/12/app-pg-dumpall.html#id-1.9.4.13.6) if POSTGRES_CLUSTER is set). Defaults to `-Z6`. |
+| POSTGRES_EXTRA_OPTS | Additional [options](https://www.postgresql.org/docs/12/app-pgdump.html#PG-DUMP-OPTIONS) for `pg_dump` (or `pg_dumpall` [options](https://www.postgresql.org/docs/12/app-pg-dumpall.html#id-1.9.4.13.6) if POSTGRES_CLUSTER is set). Defaults to `-Z1`. |
 | POSTGRES_CLUSTER | Set to `TRUE` in order to use `pg_dumpall` instead. Also set POSTGRES_EXTRA_OPTS to any value or empty since the default value is not compatible with `pg_dumpall`. |
 | POSTGRES_HOST | Postgres connection parameter; postgres host to connect to. Required. |
 | POSTGRES_PASSWORD | Postgres connection parameter; postgres password to connect with. Required. |
@@ -94,6 +97,9 @@ Most variables are the same as in the [official postgres image](https://hub.dock
 | SCHEDULE | [Cron-schedule](http://godoc.org/github.com/robfig/cron#hdr-Predefined_schedules) specifying the interval between postgres backups. Defaults to `@daily`. |
 | TZ | [POSIX TZ variable](https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html) specifying the timezone used to evaluate SCHEDULE cron (example "Europe/Paris"). |
 | WEBHOOK_URL | URL to be called after an error or after a successful backup (POST with a JSON payload, check `hooks/00-webhook` file for more info). Default disabled. |
+| WEBHOOK_ERROR_URL | URL to be called in case backup fails. Default disabled. |
+| WEBHOOK_PRE_BACKUP_URL | URL to be called when backup starts. Default disabled. |
+| WEBHOOK_POST_BACKUP_URL | URL to be called when backup completes successfully. Default disabled. |
 | WEBHOOK_EXTRA_ARGS | Extra arguments for the `curl` execution in the webhook (check `hooks/00-webhook` file for more info). |
 
 #### Special Environment Variables
