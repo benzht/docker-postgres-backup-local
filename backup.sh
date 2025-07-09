@@ -35,14 +35,14 @@ for DB in ${POSTGRES_DBS}; do
   #Create dump
   if [ "${POSTGRES_CLUSTER}" = "TRUE" ]; then
     echo "Creating cluster dump of ${DB} database from ${POSTGRES_HOST}..."
-    stdbuf -o0 pg_dumpall -l "${DB}" ${POSTGRES_EXTRA_OPTS}  | \
-      stdbuf -o0 bzip2 | \
-      stdbuf -o0  openssl smime -encrypt -aes256 -binary -outform DEM -out "${FILE}" "${CERTIFICATE_FILE}"
+    pg_dumpall -l "${DB}" ${POSTGRES_EXTRA_OPTS}  | \
+       bzip2 | \
+       openssl smime -encrypt -aes256 -binary -outform DEM -stream -out "${FILE}" "${CERTIFICATE_FILE}"
   else
     echo "Creating dump of ${DB} database from ${POSTGRES_HOST}..."
-    stdbuf -o0 pg_dump -d "${DB}" ${POSTGRES_EXTRA_OPTS} | \
-      stdbuf -o0 bzip2 | \
-      stdbuf -o0 openssl smime -encrypt -aes256 -binary -outform DEM -out "${FILE}" "${CERTIFICATE_FILE}"
+    pg_dump -d "${DB}" ${POSTGRES_EXTRA_OPTS} | \
+      bzip2 | \
+      openssl smime -encrypt -aes256 -binary -outform DEM -stream -out "${FILE}" "${CERTIFICATE_FILE}"
   fi
   #Copy (hardlink) for each entry
   if [ -d "${FILE}" ]; then
