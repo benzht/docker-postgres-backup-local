@@ -66,7 +66,7 @@ if [ '!' -d "${BACKUP_DIR}" -o '!' -w "${BACKUP_DIR}" -o '!' -x "${BACKUP_DIR}" 
 fi
 
 for DB in ${POSTGRES_DBS}; do
-    KEY_BASE="${BACKUP_DIR}/${ENCRYPTION_CERT}${DB}"
+    KEY_BASE="${CERT_DIR}/${ENCRYPTION_CERT}${DB}"
     SUBJECT="$(echo "${CERT_SUBJECT}" | env DB="$DB" envsubst '${DB}')"
     if [ ! -f  "${KEY_BASE}.crt" ]; then
         echo "Generating Key Pair for ${DB} - REMEMBER TO MOVE THE KEY TO A SAFE PLACE"

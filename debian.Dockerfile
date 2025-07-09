@@ -51,7 +51,8 @@ ENV POSTGRES_DB="**None**" \
     WEBHOOK_POST_BACKUP_URL="**None**" \
     WEBHOOK_EXTRA_ARGS="" \
     ENCRYPTION_CERT="backup_" \
-    CERT_SUBJECT='/C=NL/O=SmartSigns/OU=DatabaseBackup/CN=${DB}'
+    CERT_SUBJECT='/C=NL/O=SmartSigns/OU=DatabaseBackup/CN=${DB}' \
+    CERT_DIR="/backups/certs"
 
 COPY hooks /hooks
 COPY backup.sh env.sh init.sh /

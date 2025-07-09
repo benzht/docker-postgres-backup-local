@@ -22,7 +22,7 @@ mkdir -p "${BACKUP_DIR}/last/" "${BACKUP_DIR}/daily/" "${BACKUP_DIR}/weekly/" "$
 
 #Loop all databases
 for DB in ${POSTGRES_DBS}; do
-  CERTIFICATE_FILE="${BACKUP_DIR}/${ENCRYPTION_CERT}${DB}.crt"
+  CERTIFICATE_FILE="${CERT_DIR}/${ENCRYPTION_CERT}${DB}.crt"
   #Initialize filename vers
   LAST_FILENAME="${DB}-`date +%Y%m%d-%H%M%S`${BACKUP_SUFFIX}"
   DAILY_FILENAME="${DB}-`date +%Y%m%d`${BACKUP_SUFFIX}"
