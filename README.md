@@ -19,16 +19,18 @@ openssl req -x509 -nodes -days 1000000 \
     -out backup.crt
 ```
 
-To unpack the encrypted backup, use
+To unpack the encrypted backup run the command below and paste the key (followed by a Control-D on an empty line).
+(Should you have the key stored on file then replace `<(cat)` with the filename)
 ```bash
-FILE=./backup/last/database-latest.sql.gz
-openssl smime -decrypt -in ${FILE} -binary -inform DEM -inkey backup.key | \
+FILE=./backup/last/database-latest.dump.bz2.ssl
+openssl smime -decrypt -in ${FILE} -binary -inform DEM -inkey <(cat) | \
     bzip2 --decompress > $(basename -s .bz2.ssl ${FILE})
 ```
 
-The above can be piped directly into | pg_restore -d ${NEW_DB}
+
+The above can be piped directly into | pg_restore -d ${NEW_DB} (again: paste the key followed by Ctrl-D on an empty line or replace `<(cat)` with the filename)
 ```bash
-openssl smime -decrypt -in ${FILE} -binary -inform DEM -inkey backup.key | bzip2 --decompress --stdout \
+openssl smime -decrypt -in ${FILE} -binary -inform DEM -inkey <(cat) | bzip2 --decompress --stdout \
     pg_restore -d ${NEW_DB}
 ```
 
