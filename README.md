@@ -70,7 +70,6 @@ services:
         user: postgres:postgres # Optional: see below
         volumes:
             - /var/opt/pgbackups:/backups
-            - /backup.crt:/backup.crt:ro
         links:
             - postgres
         depends_on:
@@ -88,7 +87,8 @@ services:
             - BACKUP_KEEP_WEEKS=4
             - BACKUP_KEEP_MONTHS=6
             - HEALTHCHECK_PORT=8080
-            - ENCRYPTION_CERT=backup.crt
+            - ENCRYPTION_CERT=backup
+            - CERT_SUBJECT=/C=NL/O=MyOrganization/OU=DatabaseBackup/CN=$${DB}
 ```
 
 For security reasons it is recommended to run it as user `postgres:postgres`.
@@ -119,7 +119,7 @@ Most variables are the same as in the [official postgres image](https://hub.dock
 | HEALTHCHECK_PORT        | Port listening for cron-schedule health check. Defaults to `8080`.                                                                                                                                                                                                              |
 | POSTGRES_DB             | Comma or space separated list of postgres databases to backup. If POSTGRES_CLUSTER is set this refers to the database to connect to for dumping global objects and discovering what other databases should be dumped (typically is either `postgres` or `template1`). Required. |
 | POSTGRES_DB_FILE        | Alternative to POSTGRES_DB, but with one database per line, for usage with docker secrets.                                                                                                                                                                                      |
-| POSTGRES_EXTRA_OPTS     | Additional [options](https://www.postgresql.org/docs/12/app-pgdump.html#PG-DUMP-OPTIONS) for `pg_dump` (or `pg_dumpall` [options](https://www.postgresql.org/docs/12/app-pg-dumpall.html#id-1.9.4.13.6) if POSTGRES_CLUSTER is set). Defaults to `-Z1`.                         |
+| POSTGRES_EXTRA_OPTS     | Additional [options](https://www.postgresql.org/docs/12/app-pgdump.html#PG-DUMP-OPTIONS) for `pg_dump` (or `pg_dumpall` [options](https://www.postgresql.org/docs/12/app-pg-dumpall.html#id-1.9.4.13.6) if POSTGRES_CLUSTER is set). Defaults to `"-Z zstd:9 -Fc"`.             |
 | POSTGRES_CLUSTER        | Set to `TRUE` in order to use `pg_dumpall` instead. Also set POSTGRES_EXTRA_OPTS to any value or empty since the default value is not compatible with `pg_dumpall`.                                                                                                             |
 | POSTGRES_HOST           | Postgres connection parameter; postgres host to connect to. Required.                                                                                                                                                                                                           |
 | POSTGRES_PASSWORD       | Postgres connection parameter; postgres password to connect with. Required.                                                                                                                                                                                                     |
