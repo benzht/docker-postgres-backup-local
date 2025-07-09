@@ -64,3 +64,16 @@ if [ '!' -d "${BACKUP_DIR}" -o '!' -w "${BACKUP_DIR}" -o '!' -x "${BACKUP_DIR}" 
   echo "BACKUP_DIR points to a file or folder with insufficient permissions."
   exit 1
 fi
+
+for DB in ${POSTGRES_DBS}; do
+    KEY_BASE="${BACKUP_DIR}/${ENCRYPTION_CERT}${DB}"
+    SUBJECT="$(echo "${CERT_SUBJECT}" | env DB="$DB" envsubst '${DB}')"
+    if [ ! -f  "${KEY_BASE}.crt" ]; then
+        echo "Generating Key Pair for ${DB} - REMEMBER TO MOVE THE KEY TO A SAFE PLACE"
+        openssl req -x509 -nodes -days 1000000 \
+            -newkey rsa:4096 \
+            -subj "${SUBJECT}" \
+            -keyout "${KEY_BASE}.key" \
+            -out "${KEY_BASE}.crt"
+    fi
+done

@@ -22,17 +22,7 @@ mkdir -p "${BACKUP_DIR}/last/" "${BACKUP_DIR}/daily/" "${BACKUP_DIR}/weekly/" "$
 
 #Loop all databases
 for DB in ${POSTGRES_DBS}; do
-    KEY_BASE="${BACKUP_DIR}/${ENCRYPTION_CERT}${DB}"
-    SUBJECT="$(env $DB; echo "${CERT_SUBJECT}" | envsubst '${DB}')"
-    if [ ! -f  "${KEY_BASE}.crt" ]; then
-        echo "Generating Key Pair - REMEMBER TO MOVE THE KEY TO A SAFE PLACE"
-        openssl req -x509 -nodes -days 1000000 \
-            -newkey rsa:4096 \
-            -subj "$(echo "${CERT_SUBJECT}" | env DB="$DB" envsubst '${DB}')" \
-            -keyout "${KEY_BASE}.key" \
-            -out "${KEY_BASE}.crt"
-    fi
-
+  CERTIFICATE_FILE="${BACKUP_DIR}/${ENCRYPTION_CERT}${DB}.crt"
   #Initialize filename vers
   LAST_FILENAME="${DB}-`date +%Y%m%d-%H%M%S`${BACKUP_SUFFIX}"
   DAILY_FILENAME="${DB}-`date +%Y%m%d`${BACKUP_SUFFIX}"
@@ -46,11 +36,11 @@ for DB in ${POSTGRES_DBS}; do
   if [ "${POSTGRES_CLUSTER}" = "TRUE" ]; then
     echo "Creating cluster dump of ${DB} database from ${POSTGRES_HOST}..."
     pg_dumpall -l "${DB}" ${POSTGRES_EXTRA_OPTS}  | bzip2 |
-         openssl smime -encrypt -aes256 -binary -outform DEM -out "${FILE}" "${KEY_BASE}.crt"
+         openssl smime -encrypt -aes256 -binary -outform DEM -out "${FILE}" "${CERTIFICATE_FILE}"
   else
     echo "Creating dump of ${DB} database from ${POSTGRES_HOST}..."
     pg_dump -d "${DB}" ${POSTGRES_EXTRA_OPTS} | bzip2 |
-         openssl smime -encrypt -aes256 -binary -outform DEM -out "${FILE}" "${KEY_BASE}.crt"
+         openssl smime -encrypt -aes256 -binary -outform DEM -out "${FILE}" "${CERTIFICATE_FILE}"
   fi
   #Copy (hardlink) for each entry
   if [ -d "${FILE}" ]; then
