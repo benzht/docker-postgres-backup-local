@@ -65,15 +65,34 @@ if [ '!' -d "${BACKUP_DIR}" -o '!' -w "${BACKUP_DIR}" -o '!' -x "${BACKUP_DIR}" 
   exit 1
 fi
 
-for DB in ${POSTGRES_DBS}; do
-    KEY_BASE="${CERT_DIR}/${ENCRYPTION_CERT}${DB}"
-    SUBJECT="$(echo "${CERT_SUBJECT}" | env DB="$DB" envsubst '${DB}')"
-    if [ ! -f  "${KEY_BASE}.crt" ]; then
-        echo "Generating Key Pair for ${DB} - REMEMBER TO MOVE THE KEY TO A SAFE PLACE"
-        openssl req -x509 -nodes -days 1000000 \
-            -newkey rsa:4096 \
-            -subj "${SUBJECT}" \
-            -keyout "${KEY_BASE}.key" \
-            -out "${KEY_BASE}.crt"
-    fi
-done
+
+if [ "${ENCRYPTION_TYPE}" = "X.509" ]; then
+  export ENCRYPTION_PIPE="./encryptions_pipe.sh"
+  for DB in ${POSTGRES_DBS}; do
+      KEY_BASE="${CERT_DIR}/${ENCRYPTION_CERT}${DB}"
+      SUBJECT="$(echo "${CERT_SUBJECT}" | env DB="$DB" envsubst '${DB}')"
+      if [ ! -f  "${KEY_BASE}.crt" ]; then
+          echo "Generating Key Pair for ${DB} - REMEMBER TO MOVE THE KEY TO A SAFE PLACE"
+          openssl req -x509 -nodes -days 1000000 \
+              -newkey rsa:4096 \
+              -subj "${SUBJECT}" \
+              -keyout "${KEY_BASE}.key" \
+              -out "${KEY_BASE}.crt"
+      fi
+  done
+else
+  export ENCRYPTION_PIPE="./gpg_encrypt"
+  for DB in ${POSTGRES_DBS}; do
+      KEY_BASE="${CERT_DIR}/${ENCRYPTION_CERT}${DB}"
+      SUBJECT="$(echo "${CERT_SUBJECT}" | env DB="$DB" envsubst '${DB}')"
+      PUBLIC_KEY_FILE="${KEY_BASE}.pub.asc"
+      if [ -f  "${PUBLIC_KEY_FILE}" ]; then
+          echo "Importing GPG Key for ${DB}"
+          gpg --import "${PUBLIC_KEY_FILE}" 2>&1 | awk '/^gpg: key/ {print $3}'
+          # Extract the fingerprint of the last imported key
+          FPR=$(gpg --with-colons --import-options show-only --import "${PUBLIC_KEY_FILE}" | awk -F: '/^fpr:/ {print $10; exit}')
+          declare -x "GPG_KEY_${DB}=${FPR}"
+          echo -e "5\ny\n" | gpg --command-fd 0 --edit-key "$FPR" trust
+      fi
+  done
+fi

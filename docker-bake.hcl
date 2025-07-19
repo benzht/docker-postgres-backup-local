@@ -1,6 +1,6 @@
 group "default" {
 // 	targets = ["debian-latest", "alpine-latest", "debian-16", "debian-15", "debian-14", "debian-13", "alpine-16", "alpine-15", "alpine-14", "alpine-13"]
-	targets = ["alpine-latest"]
+	targets = ["debian-latest", "alpine-latest"]
 }
 
 variable "REGISTRY_PREFIX" {

@@ -19,7 +19,7 @@ RUN set -x \
 #
 
 RUN set -x \
-	&& apt-get update && apt-get install -y --no-install-recommends ca-certificates curl openssl && apt-get clean && rm -rf /var/lib/apt/lists/* \
+	&& apt-get update && apt-get install -y --no-install-recommends ca-certificates curl openssl gettext bzip2 && apt-get clean && rm -rf /var/lib/apt/lists/* \
 	&& curl --fail --retry 4 --retry-all-errors -o /usr/local/bin/go-cron.gz -L https://github.com/prodrigestivill/go-cron/releases/download/$GOCRONVER/go-cron-$TARGETOS-$TARGETARCH.gz \
 	&& gzip -vnd /usr/local/bin/go-cron.gz && chmod a+x /usr/local/bin/go-cron
 
@@ -50,12 +50,13 @@ ENV POSTGRES_DB="**None**" \
     WEBHOOK_PRE_BACKUP_URL="**None**" \
     WEBHOOK_POST_BACKUP_URL="**None**" \
     WEBHOOK_EXTRA_ARGS="" \
+    ENCRYPTION_TYPE="X.509" \
     ENCRYPTION_CERT="backup_" \
     CERT_SUBJECT='/C=NL/O=SmartSigns/OU=DatabaseBackup/CN=${DB}' \
     CERT_DIR="/backups/certs"
 
 COPY hooks /hooks
-COPY backup.sh env.sh init.sh /
+COPY backup.sh env.sh init.sh encryption_pipe.sh gpg_encrypt.sh /
 
 VOLUME /backups
 

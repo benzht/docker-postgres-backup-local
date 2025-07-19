@@ -5,7 +5,7 @@ ARG GOCRONVER=v0.0.11
 ARG TARGETOS
 ARG TARGETARCH
 RUN set -x \
-	&& apk update && apk add ca-certificates curl openssl envsubst\
+	&& apk update && apk add ca-certificates curl openssl envsubst gnupg\
 	&& curl --fail --retry 4 --retry-all-errors -L https://github.com/prodrigestivill/go-cron/releases/download/$GOCRONVER/go-cron-$TARGETOS-$TARGETARCH-static.gz | zcat > /usr/local/bin/go-cron \
 	&& chmod a+x /usr/local/bin/go-cron
 
@@ -36,12 +36,13 @@ ENV POSTGRES_DB="**None**" \
     WEBHOOK_PRE_BACKUP_URL="**None**" \
     WEBHOOK_POST_BACKUP_URL="**None**" \
     WEBHOOK_EXTRA_ARGS="" \
+    ENCRYPTION_TYPE="X.509" \
     ENCRYPTION_CERT="backup_" \
     CERT_SUBJECT='/C=NL/O=SmartSigns/OU=DatabaseBackup/CN=${DB}' \
     CERT_DIR="/backups/certs"
 
 COPY hooks /hooks
-COPY backup.sh env.sh init.sh /
+COPY backup.sh env.sh init.sh encryption_pipe.sh gpg_encrypt.sh /
 
 VOLUME /backups
 

@@ -23,6 +23,8 @@ mkdir -p "${BACKUP_DIR}/last/" "${BACKUP_DIR}/daily/" "${BACKUP_DIR}/weekly/" "$
 #Loop all databases
 for DB in ${POSTGRES_DBS}; do
   CERTIFICATE_FILE="${CERT_DIR}/${ENCRYPTION_CERT}${DB}.crt"
+  GPG_KEY_NAME="GPG_KEY_${DB}"
+  export GPG_KEY=${!GPG_KEY_NAME}
   #Initialize filename vers
   LAST_FILENAME="${DB}-`date +%Y%m%d-%H%M%S`${BACKUP_SUFFIX}"
   DAILY_FILENAME="${DB}-`date +%Y%m%d`${BACKUP_SUFFIX}"
@@ -35,14 +37,10 @@ for DB in ${POSTGRES_DBS}; do
   #Create dump
   if [ "${POSTGRES_CLUSTER}" = "TRUE" ]; then
     echo "Creating cluster dump of ${DB} database from ${POSTGRES_HOST}..."
-    pg_dumpall -l "${DB}" ${POSTGRES_EXTRA_OPTS}  | \
-       bzip2 | \
-       openssl smime -encrypt -aes256 -binary -outform DEM -stream -out "${FILE}" "${CERTIFICATE_FILE}"
+    pg_dumpall -l "${DB}" ${POSTGRES_EXTRA_OPTS} | bzip2 | gpg --encrypt --recipient ${GPG_KEY} > "${FILE}"
   else
     echo "Creating dump of ${DB} database from ${POSTGRES_HOST}..."
-    pg_dump -d "${DB}" ${POSTGRES_EXTRA_OPTS} | \
-      bzip2 | \
-      openssl smime -encrypt -aes256 -binary -outform DEM -stream -out "${FILE}" "${CERTIFICATE_FILE}"
+    pg_dump -d "${DB}" ${POSTGRES_EXTRA_OPTS} | bzip2 | gpg --encrypt --recipient ${GPG_KEY} > "${FILE}"
   fi
   #Copy (hardlink) for each entry
   if [ -d "${FILE}" ]; then
