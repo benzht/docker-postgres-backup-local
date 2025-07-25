@@ -35,10 +35,10 @@ for DB in ${POSTGRES_DBS}; do
   #Create dump
   if [ "${POSTGRES_CLUSTER}" = "TRUE" ]; then
     echo "Creating cluster dump of ${DB} database from ${POSTGRES_HOST}..."
-    pg_dumpall -l "${DB}" ${POSTGRES_EXTRA_OPTS} | bzip2 | gpg --encrypt --recipient ${GPG_KEYS["$DB"]} > "${FILE}"
+    pg_dumpall -l "${DB}" ${POSTGRES_EXTRA_OPTS} | bzip2 | gpg --homedir "$GPG_RAMDIR" --encrypt --recipient ${GPG_KEYS["$DB"]} > "${FILE}"
   else
     echo "Creating dump of ${DB} database from ${POSTGRES_HOST}..."
-    pg_dump -d "${DB}" ${POSTGRES_EXTRA_OPTS} | bzip2 | gpg --encrypt --recipient ${GPG_KEYS["$DB"]} > "${FILE}"
+    pg_dump -d "${DB}" ${POSTGRES_EXTRA_OPTS} | bzip2 | gpg --homedir "$GPG_RAMDIR" --encrypt --recipient ${GPG_KEYS["$DB"]} > "${FILE}"
   fi
   #Copy (hardlink) for each entry
   if [ -d "${FILE}" ]; then

@@ -81,6 +81,11 @@ if [ "${ENCRYPTION_TYPE}" = "X.509" ]; then
       fi
   done
 else
+  GPG_RAMDIR="/dev/shm/gpg-temp-$$"        # Unique temp GPG home
+  # Create temp GPG directory in RAM
+  mkdir -p "$GPG_RAMDIR"
+  chmod 700 "$GPG_RAMDIR"
+
   export ENCRYPTION_PIPE="./gpg_encrypt"
   declare -A GPG_KEYS
   for DB in ${POSTGRES_DBS}; do
@@ -89,10 +94,10 @@ else
       PUBLIC_KEY_FILE="${KEY_BASE}.pub.asc"
       if [ -f  "${PUBLIC_KEY_FILE}" ]; then
           echo "Importing GPG Key for ${DB}"
-          gpg --import "${PUBLIC_KEY_FILE}" 2>&1 | awk '/^gpg: key/ {print $3}'
+          gpg --homedir "$GPG_RAMDIR" --import "${PUBLIC_KEY_FILE}" 2>&1 | awk '/^gpg: key/ {print $3}'
           # Extract the fingerprint of the last imported key and Trust this key
-          FPR=$(gpg --with-colons --import-options show-only --import "${PUBLIC_KEY_FILE}" | awk -F: '/^fpr:/ {print $10; exit}')
-          echo -e "5\ny\n" | gpg --command-fd 0 --edit-key "$FPR" trust
+          FPR=$(gpg --homedir "$GPG_RAMDIR" --with-colons --import-options show-only --import "${PUBLIC_KEY_FILE}" | awk -F: '/^fpr:/ {print $10; exit}')
+          echo "${FPR}:6:" | gpg --homedir "$GPG_RAMDIR" --import-ownertrust
           GPG_KEYS["${DB}"]="${FPR}"
       fi
   done

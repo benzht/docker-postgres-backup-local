@@ -43,12 +43,15 @@ openssl smime -decrypt -in ${FILE} -binary -inform DEM -inkey <(cat) | bzip2 --d
 
 ## GnuPG
 
+GnuPG keys have to be created and stored beforehand (there is no auto-generation of a key pair, yet). Store the `backup_databaseName.pub.asc`
+with the correct database name in `${BACKUP_DIR}/certs/`
+
 To create a GnuPG key pair, run
 
 ```shell
 gpg2 --expert --full-gen-key
-gpg --output databse-name.pub.asc --armor --export KEY_NUMBER
-gpg --output databse-name.priv.asc --armor --export-secret-key KEY_NUMBER
+gpg --output backup_databaseName.pub.asc --armor --export KEY_NUMBER
+gpg --output backup_databaseName.priv.asc --armor --export-secret-key KEY_NUMBER
 ```
 
 To unpack the encrypted backup run the command below and paste the key (followed by a Control-D on an empty line).
