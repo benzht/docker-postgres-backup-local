@@ -82,6 +82,7 @@ if [ "${ENCRYPTION_TYPE}" = "X.509" ]; then
   done
 else
   export ENCRYPTION_PIPE="./gpg_encrypt"
+  declare -A GPG_KEYS
   for DB in ${POSTGRES_DBS}; do
       KEY_BASE="${CERT_DIR}/${ENCRYPTION_CERT}${DB}"
       SUBJECT="$(echo "${CERT_SUBJECT}" | env DB="$DB" envsubst '${DB}')"
@@ -89,10 +90,10 @@ else
       if [ -f  "${PUBLIC_KEY_FILE}" ]; then
           echo "Importing GPG Key for ${DB}"
           gpg --import "${PUBLIC_KEY_FILE}" 2>&1 | awk '/^gpg: key/ {print $3}'
-          # Extract the fingerprint of the last imported key
+          # Extract the fingerprint of the last imported key and Trust this key
           FPR=$(gpg --with-colons --import-options show-only --import "${PUBLIC_KEY_FILE}" | awk -F: '/^fpr:/ {print $10; exit}')
-          declare -x "GPG_KEY_${DB}=${FPR}"
           echo -e "5\ny\n" | gpg --command-fd 0 --edit-key "$FPR" trust
+          GPG_KEYS["${DB}"]="${FPR}"
       fi
   done
 fi

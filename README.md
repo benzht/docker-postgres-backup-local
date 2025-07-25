@@ -3,14 +3,21 @@
 
 # This clone
 
-This repository extends the original by encrypting the backup on the fly with the public key of an X.509 certificate.
+This repository extends the original by encrypting the backup on the fly with the public key of an X.509 certificate
+or GnuPG key pair. 
 The backups will be `bzip2` compressed and ssl-encrypted (`openssl smime -encrypt -aes256 -binary -outform DEM...`).
 The backup will be encrypted against the public key in `${BACKUP_DIR}/${ENCRYPTION_CERT}`.
 If no certificate file is found there, a new key/certificate is generated
 with `${CERT_SUBJECT}` as its subject in this place (please move the private key to a safe place).
 
+## X.509
 
-To create a certificate, run
+**Warning:** Databases ecrypted with X.509 certificates suffer from an *openssh smime* issue that prevents decryption
+of files larger than ~4GB because openssl is [refusing to implement stream support](https://github.com/openssl/openssl/issues/26372) 
+which leaves may people with [perfectly encrypted files they cannot open any more
+](https://mailing.openssl.users.narkive.com/rl6oJMF3/the-problem-of-decrypting-big-files-encrypted-with-openssl-smime)
+
+To create an X.509 certificate, run
 ```shell
 openssl req -x509 -nodes -days 1000000 \
     -newkey rsa:4096 \
@@ -32,6 +39,22 @@ The above can be piped directly into | pg_restore -d ${NEW_DB} (again: paste the
 ```bash
 openssl smime -decrypt -in ${FILE} -binary -inform DEM -inkey <(cat) | bzip2 --decompress --stdout \
     pg_restore -d ${NEW_DB}
+```
+
+## GnuPG
+
+To create a GnuPG key pair, run
+
+```shell
+gpg2 --expert --full-gen-key
+gpg --output databse-name.pub.asc --armor --export KEY_NUMBER
+gpg --output databse-name.priv.asc --armor --export-secret-key KEY_NUMBER
+```
+
+To unpack the encrypted backup run the command below and paste the key (followed by a Control-D on an empty line).
+```bash
+FILE=./backup/last/database-latest.dump.bz2.ssl
+./gpg_decrypt.sh ${FILE} decryptedDatabase.dump
 ```
 
 # postgres-backup-local
@@ -137,9 +160,10 @@ Most variables are the same as in the [official postgres image](https://hub.dock
 | WEBHOOK_PRE_BACKUP_URL  | URL to be called when backup starts. Default disabled.                                                                                                                                                                                                                          |
 | WEBHOOK_POST_BACKUP_URL | URL to be called when backup completes successfully. Default disabled.                                                                                                                                                                                                          |
 | WEBHOOK_EXTRA_ARGS      | Extra arguments for the `curl` execution in the webhook (check `hooks/00-webhook` file for more info).                                                                                                                                                                          |
+| ENCRYPTION_TYPE         | Which type of keys to use for encryption X.509 or gpg (default: X.509)                                                                                                                                                                                                          |
 | ENCRYPTION_CERT         | Base name certificate/key files to use (default: backup_)                                                                                                                                                                                                                       |
 | CERT_DIR                | Path to where the backup certificates are expected/created (Default: /backups/certs/)                                                                                                                                                                                           |
-| CERT_SUBJECT            | Subject when no certificate is found for a database  (default: /C=NL/O=SmartSigns/OU=DatabaseBackup/CN=${DB})                                                                                                                                                                   |
+| CERT_SUBJECT            | Subject when no X.509 certificate is found for a database  (default: /C=NL/O=SmartSigns/OU=DatabaseBackup/CN=${DB})                                                                                                                                                             |
 
 #### Special Environment Variables
 
@@ -228,3 +252,4 @@ Replace `$BACKUPFILE`, `$VERSION`, `$HOSTNAME`, `$PORT`, `$USERNAME` and `$DBNAM
 ```sh
 docker run --rm --tty --interactive -v $BACKUPFILE:/tmp/backupfile.sql.gz postgres:$VERSION /bin/sh -c "zcat /tmp/backupfile.sql.gz | psql --host=$HOSTNAME --port=$PORT --username=$USERNAME --dbname=$DBNAME -W"
 ```
+
